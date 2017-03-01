@@ -1,13 +1,15 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.renderers import JSONRenderer
-from rest_framework.parsers import JSONParser
+# from django.shortcuts import render
+# from django.http import HttpResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from rest_framework.renderers import JSONRenderer
+# from rest_framework.parsers import JSONParser
+# from rest_framework.decorators import api_view
 from blogapp.models import Article
 from blogapp.serializers import ArticleSerializer
-from rest_framework import status
-from rest_framework.decorators import api_view
+from django.http import Http404
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 # Create your views here.
 """Первый шаг туториала"""
 # class JSONResponse(HttpResponse):
@@ -64,46 +66,99 @@ from rest_framework.response import Response
 #     elif request.method == 'DELETE':
 #         article.delete()
 #         return HttpResponse(status=204)
-"""второй шаг туториала"""
+"""второй шаг туториала
+написание функций"""
+#
+# @api_view(['GET', 'POST'])
+# def article_list(request, format=None):
+#     """
+#     показать все статьи или создать новую
+#     """
+#     if request.method == 'GET':
+#         articles = Article.objects.all()
+#         serializer = ArticleSerializer(articles, many=True)
+#         return Response(serializer.data)
+#     elif request.method == 'POST':
+#         serializer = ArticleSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+# @api_view(['GET', 'PUT', 'DELETE'])
+# def article_detail(request, pk, format=None):
+#     """
+#     Показать статью, обновить или удалить статью
+#     :param request:
+#     :param pk:
+#     :return: article
+#     """
+#     try:
+#         article = Article.objects.get(pk=pk)
+#     except Article.DoesNotExist:
+#         return Response(status=status.HTTP_404_NOT_FOUND)
+#
+#     if request.method == 'GET':
+#         serializer = ArticleSerializer(article)
+#         return Response(serializer.data)
+#     elif request.method == 'PUT':
+#         serializer = ArticleSerializer(article, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     elif request.method == 'DELETE':
+#         article.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['GET', 'POST'])
-def article_list(request, format=None):
+"""
+Третий шаг. Написание классов вместо функций
+"""
+
+class ArticleList(APIView):
     """
-    показать все статьи или создать новую
+    отобразить все статьи или создать новую
     """
-    if request.method == 'GET':
+    def get(self, request, format=None):
         articles = Article.objects.all()
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
-    elif request.method == 'POST':
+
+    def post(self, request, format=None):
         serializer = ArticleSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def article_detail(request, pk, format=None):
+class ArticleDetail(APIView):
     """
     Показать статью, обновить или удалить статью
     :param request:
     :param pk:
     :return: article
     """
-    try:
-        article = Article.objects.get(pk=pk)
-    except Article.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    def get_object(self, pk):
+        try:
+           return Article.objects.get(pk=pk)
+        except Article.DoesNotExist:
+            raise Http404
 
-    if request.method == 'GET':
+
+    def get(self, request, pk, format=None):
+        article = self.get_object(pk)
         serializer = ArticleSerializer(article)
         return Response(serializer.data)
-    elif request.method == 'PUT':
+
+    def put(self, request, pk, format=None):
+        article = self.get_object(pk)
         serializer = ArticleSerializer(article, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
+
+    def delete(self, request, pk, format=None):
+        article = self.get_object(pk)
         article.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
