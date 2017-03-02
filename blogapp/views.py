@@ -11,6 +11,8 @@
 # from rest_framework import mixins
 from blogapp.models import Article
 from blogapp.serializers import ArticleSerializer
+from blogapp.serializers import UserSerializer
+from django.contrib.auth.models import User
 from rest_framework import generics
 # Create your views here.
 """Первый шаг туториала"""
@@ -208,6 +210,7 @@ REST framework provides a set of already mixed-in generic views
 that we can use to trim down our views.py module even more.
 """
 
+
 class ArticleList(generics.ListCreateAPIView):
     """
     отобразить все статьи или создать новую
@@ -215,14 +218,23 @@ class ArticleList(generics.ListCreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 class ArticleDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Показать статью, обновить или удалить статью
-    :param request:
-    :param pk:
-    :return: article
     """
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
 
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
